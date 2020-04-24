@@ -55,3 +55,8 @@ fi
 echo ">>>>> YOUR CERTIFICATE INFORMATION IS:"
 openssl x509 -in $hostcert_path -noout -text
 echo "><><><><><><><><><><><><><><><><><><><"
+
+echo ">>>>> YOUR HOST CERT AND KEY ARE:"
+cat $hostcert_path
+cat $hostkey_path
+echo "><><><><><><><><><><><><><><><><><><><"
