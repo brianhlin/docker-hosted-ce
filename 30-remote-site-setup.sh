@@ -35,6 +35,37 @@ EOF
   ls -l "$ssh_dir"
 }
 
+# Populate the bosco override dir from a Git repo
+# Expected Git repo layout:
+#     RESOURCE_NAME_1/
+#         bosco_override/
+#         ...
+#     RESOURCE_NAME_2/
+#         bosco_override/
+#         ...
+#     ...
+function bosco_override_setup {
+    GIT_ENDPOINT=$1
+    RESOURCE_NAME=$2
+
+    # Set up config for SSH endpoints
+    if [[ $GIT_ENDPOINT =~ ^[A-Za-z0-9_-]+@([^:]+): ]]; then
+        ssh-keyscan "${BASH_REMATCH[1]}" >> ~/.ssh/known_hosts
+    fi
+
+    REPO_DIR=$(mktemp -d)
+    OVERRIDE_DIR=/etc/condor-ce/bosco_override/
+
+    git clone --depth=1 $GIT_ENDPOINT $REPO_DIR
+
+    # Bosco override dirs are expected in the following location in the git repo:
+    #   <RESOURCE NAME>/bosco_override/
+    RESOURCE_DIR="$REPO_DIR/$RESOURCE_NAME/"
+    [[ -d $RESOURCE_DIR ]] || errexit "Could not find $RESOURCE_NAME/ under $GIT_ENDPOINT"
+    rsync -az "$RESOURCE_DIR/bosco_override/"  $OVERRIDE_DIR
+}
+
+
 # Install the WN client, CAs, and CRLs on the remote host
 # Store logs in /var/log/condor-ce/ to simplify serving logs via Kubernetes
 setup_endpoints_ini () {
@@ -66,7 +97,7 @@ GIT_SSH_KEY=/etc/osg/git.key
 [[ -f $GIT_SSH_KEY ]] && export GIT_SSH_COMMAND="ssh -i $GIT_SSH_KEY"
 if [[ -n $BOSCO_GIT_ENDPOINT && -n $BOSCO_DIRECTORY ]]; then
     OVERRIDE_DIR=/etc/condor-ce/bosco_override
-    /usr/local/bin/bosco-override-setup.sh "$BOSCO_GIT_ENDPOINT" "$BOSCO_DIRECTORY"
+    bosco_override_setup "$BOSCO_GIT_ENDPOINT" "$BOSCO_DIRECTORY"
 fi
 unset GIT_SSH_COMMAND
 
