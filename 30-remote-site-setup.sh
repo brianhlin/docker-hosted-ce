@@ -112,6 +112,9 @@ cat <<EOF > "$ssh_config"
 Host $remote_fqdn
   Port $remote_port
   IdentityFile ${BOSCO_KEY}
+  ControlMaster auto
+  ControlPath $root_ssh_dir/cm-%r@%h:%p
+  ControlPersist  15m
 EOF
 chmod 700 $ssh_config
 debug_file_contents "$ssh_config"
