@@ -1,8 +1,14 @@
-FROM opensciencegrid/software-base:fresh
+ARGS BASE_YUM_REPO=release
+
+FROM opensciencegrid/software-base:$BASE_YUM_REPO
 LABEL maintainer "OSG Software <help@opensciencegrid.org>"
 
-RUN yum install -y --enablerepo=osg-testing \
-                   --enablerepo=osg-upcoming-testing \
+ARGS BASE_YUM_REPO=release
+
+RUN if [[ $BASE_YUM_REPO = release ]]; then \
+       yumrepo=osg-upcoming; else \
+       yumrepo=osg-upcoming-$BASE_YUM_REPO; fi && \
+    yum install -y --enablerepo=$yumrepo \
                    osg-ce-bosco \
                    # FIXME: avoid htcondor-ce-collector conflict
                    htcondor-ce \
